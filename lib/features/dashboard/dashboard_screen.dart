@@ -9,6 +9,7 @@ import '../../providers/store_config_provider.dart';
 import '../../providers/currency_provider.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/bottom_nav.dart';
+import '../reports/analytics_screen.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -120,6 +121,37 @@ class DashboardScreen extends ConsumerWidget {
                           delay: 600,
                         ),
                         const SizedBox(width: 12),
+                        _QuickActionButton(
+                          icon: Iconsax.document_text,
+                          label: 'History',
+                          color: Colors.orange,
+                          onTap: () {
+                            // History is available in the Reports screen
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const AnalyticsScreen(),
+                              ),
+                            );
+                          },
+                          delay: 200,
+                        ),
+                        const SizedBox(width: 12), // Added SizedBox for spacing
+                        _QuickActionButton(
+                          icon: Iconsax.chart_2,
+                          label: 'Reports',
+                          color: Colors.purple,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const AnalyticsScreen(),
+                              ),
+                            );
+                          },
+                          delay: 250,
+                        ),
+                        const SizedBox(width: 12), // Added SizedBox for spacing
                         _QuickActionButton(
                           icon: Iconsax.box,
                           label: 'Products',

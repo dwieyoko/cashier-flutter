@@ -61,6 +61,7 @@ dependencies:
   
   # Icons
   iconsax: ^0.0.8
+  fl_chart: ^0.69.0
 
 dev_dependencies:
   flutter_test:

@@ -32,6 +32,73 @@ final todaysOrderCountProvider = Provider<int>((ref) {
   return ref.watch(todaysOrdersProvider).length;
 });
 
+/// Provider for weekly sales data (Last 7 days)
+final weeklySalesProvider = Provider<List<Map<String, dynamic>>>((ref) {
+  final orders = ref.watch(ordersProvider);
+  final today = DateTime.now();
+  final last7Days = List.generate(7, (index) {
+    final date = today.subtract(Duration(days: 6 - index));
+    return DateTime(date.year, date.month, date.day);
+  });
+  
+  return last7Days.map((date) {
+    final daysOrders = orders.where((o) =>
+      o.createdAt.year == date.year &&
+      o.createdAt.month == date.month &&
+      o.createdAt.day == date.day
+    );
+    
+    final sales = daysOrders.fold(0.0, (sum, o) => sum + o.total);
+    
+    return {
+      'day': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][date.weekday - 1],
+      'date': date,
+      'sales': sales,
+    };
+  }).toList();
+});
+
+/// Provider for top selling products
+final topProductsProvider = Provider<List<Map<String, dynamic>>>((ref) {
+  final orders = ref.watch(ordersProvider);
+  final productSales = <String, Map<String, dynamic>>{};
+  
+  for (final order in orders) {
+    for (final item in order.items) {
+      if (!productSales.containsKey(item.productId)) {
+        productSales[item.productId] = {
+          'id': item.productId,
+          'name': item.productName,
+          'quantity': 0,
+          'revenue': 0.0,
+        };
+      }
+      
+      productSales[item.productId]!['quantity'] += item.quantity;
+      productSales[item.productId]!['revenue'] += item.subtotal;
+    }
+  }
+  
+  final sortedProducts = productSales.values.toList()
+    ..sort((a, b) => (b['quantity'] as int).compareTo(a['quantity'] as int));
+    
+  return sortedProducts.take(5).toList();
+});
+
+/// Provider for total revenue (All time)
+final totalRevenueProvider = Provider<double>((ref) {
+  final orders = ref.watch(ordersProvider);
+  return orders.fold(0, (sum, order) => sum + order.total);
+});
+
+/// Provider for average order value
+final averageOrderValueProvider = Provider<double>((ref) {
+  final orders = ref.watch(ordersProvider);
+  if (orders.isEmpty) return 0;
+  final totalRevenue = ref.watch(totalRevenueProvider);
+  return totalRevenue / orders.length;
+});
+
 class OrdersNotifier extends StateNotifier<List<Order>> {
   final Ref _ref;
   final _uuid = const Uuid();
