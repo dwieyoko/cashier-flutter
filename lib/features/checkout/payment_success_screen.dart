@@ -6,6 +6,9 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/formatters.dart';
 import '../../data/models/order.dart';
 import '../../providers/currency_provider.dart';
+import '../../providers/store_config_provider.dart';
+import '../../core/services/pdf_service.dart';
+import 'package:printing/printing.dart';
 
 class PaymentSuccessScreen extends ConsumerWidget {
   final Order order;
@@ -118,12 +121,7 @@ class PaymentSuccessScreen extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () {
-                        // TODO: Print receipt
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Print feature coming soon!')),
-                        );
-                      },
+                      onPressed: () => _printReceipt(context, ref),
                       icon: const Icon(Iconsax.printer),
                       label: const Text('Print'),
                       style: OutlinedButton.styleFrom(
@@ -153,6 +151,30 @@ class PaymentSuccessScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _printReceipt(BuildContext context, WidgetRef ref) async {
+    try {
+      final config = ref.read(storeConfigProvider);
+      
+      // Generate PDF
+      final pdfBytes = await PdfService.generateReceipt(order, config);
+      
+      // Show Print Preview
+      await Printing.layoutPdf(
+        onLayout: (format) async => pdfBytes,
+        name: 'Receipt_${order.id}',
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error generating receipt: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 }
 
