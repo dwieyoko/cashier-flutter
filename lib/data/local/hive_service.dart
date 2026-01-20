@@ -2,12 +2,14 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../models/product.dart';
 import '../models/order.dart';
 import '../models/store_config.dart';
+import '../models/stock_history.dart';
 
 /// Service for managing Hive local database
 class HiveService {
   static const String productsBox = 'products';
   static const String ordersBox = 'orders';
   static const String storeConfigBox = 'storeConfig';
+  static const String stockHistoryBox = 'stockHistory';
   
   /// Initialize Hive and register adapters
   static Future<void> init() async {
@@ -18,11 +20,14 @@ class HiveService {
     Hive.registerAdapter(OrderAdapter());
     Hive.registerAdapter(OrderItemAdapter());
     Hive.registerAdapter(StoreConfigAdapter());
+    Hive.registerAdapter(StockHistoryAdapter());
+    Hive.registerAdapter(StockChangeTypeAdapter());
     
     // Open boxes
     await Hive.openBox<Product>(productsBox);
     await Hive.openBox<Order>(ordersBox);
     await Hive.openBox<StoreConfig>(storeConfigBox);
+    await Hive.openBox<StockHistory>(stockHistoryBox);
   }
   
   /// Get products box
@@ -38,6 +43,11 @@ class HiveService {
   /// Get store config box
   static Box<StoreConfig> getStoreConfigBox() {
     return Hive.box<StoreConfig>(storeConfigBox);
+  }
+  
+  /// Get stock history box
+  static Box<StockHistory> getStockHistoryBox() {
+    return Hive.box<StockHistory>(stockHistoryBox);
   }
   
   /// Close all boxes

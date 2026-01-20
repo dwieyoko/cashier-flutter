@@ -4,6 +4,8 @@ import '../data/models/order.dart';
 import '../data/models/cart_item.dart';
 import '../data/local/hive_service.dart';
 import 'cart_provider.dart';
+import 'products_provider.dart';
+import '../data/models/stock_history.dart';
 
 /// Provider for orders list
 final ordersProvider = StateNotifierProvider<OrdersNotifier, List<Order>>((ref) {
@@ -114,13 +116,13 @@ class OrdersNotifier extends StateNotifier<List<Order>> {
   }
   
   /// Create order from current cart
-  Order createOrder({
+  Future<Order> createOrder({
     required String paymentMethod,
     double discount = 0,
     String? customerName,
     String? customerPhone,
     String? notes,
-  }) {
+  }) async {
     final cart = _ref.read(cartProvider);
     final subtotal = _ref.read(cartSubtotalProvider);
     final tax = _ref.read(cartTaxProvider);
@@ -157,6 +159,16 @@ class OrdersNotifier extends StateNotifier<List<Order>> {
     
     // Clear cart
     _ref.read(cartProvider.notifier).clearCart();
+    
+    // Deduct stock
+    for (final item in cart) {
+      _ref.read(productsProvider.notifier).adjustStock(
+        item.product.id,
+        -item.quantity,
+        StockChangeType.sale,
+        reason: 'Order ${order.id}',
+      );
+    }
     
     return order;
   }

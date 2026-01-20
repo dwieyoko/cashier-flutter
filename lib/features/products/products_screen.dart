@@ -9,6 +9,7 @@ import '../../providers/products_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/currency_provider.dart';
 import '../../widgets/glass_card.dart';
+import 'add_edit_product_screen.dart';
 
 /// Provider for selected category filter
 final selectedCategoryProvider = StateProvider<String>((ref) => 'All');
@@ -269,6 +270,13 @@ class ProductsScreen extends ConsumerWidget {
   }
 }
 
+void _showAddProductDialog(BuildContext context, WidgetRef ref) {
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (_) => const AddEditProductScreen()),
+  );
+}
+
 class _ProductCard extends ConsumerWidget {
   final Product product;
   final int delay;
@@ -282,6 +290,7 @@ class _ProductCard extends ConsumerWidget {
     
     return GestureDetector(
       onTap: () => _addToCart(context, ref),
+      onLongPress: () => _showProductOptions(context, ref),
       child: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).brightness == Brightness.dark
@@ -321,6 +330,46 @@ class _ProductCard extends ConsumerWidget {
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.check, color: Colors.white, size: 14),
+                        ),
+                      ),
+                    if (product.stockQuantity <= 10 && product.stockQuantity > 0)
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.warning,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            'Low Stock',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    if (product.stockQuantity == 0)
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.error,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            'Out of Stock',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ),
                   ],
@@ -387,6 +436,78 @@ class _ProductCard extends ConsumerWidget {
         content: Text('${product.name} added to cart'),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+  
+  void _showProductOptions(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Theme.of(context).brightness == Brightness.dark
+            ? AppColors.surfaceDark
+            : AppColors.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Iconsax.edit, color: AppColors.primary),
+              title: const Text('Edit Product'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AddEditProductScreen(product: product),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(Iconsax.trash, color: AppColors.error),
+              title: const Text('Delete Product'),
+              onTap: () {
+                Navigator.pop(context);
+                _confirmDelete(context, ref);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  void _confirmDelete(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Product'),
+        content: Text('Are you sure you want to delete "${product.name}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              ref.read(productsProvider.notifier).deleteProduct(product.id);
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('${product.name} deleted'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Delete'),
+          ),
+        ],
       ),
     );
   }

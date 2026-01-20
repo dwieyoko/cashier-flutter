@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../data/models/product.dart';
+import '../data/models/stock_history.dart';
 import '../data/local/hive_service.dart';
 
 /// Provider for the products list
@@ -172,5 +173,34 @@ class ProductsNotifier extends StateNotifier<List<Product>> {
     );
     addProduct(product);
     return product;
+  }
+  
+  /// Adjust product stock
+  Future<void> adjustStock(String productId, int change, StockChangeType type, {String? reason}) async {
+    try {
+      final product = state.firstWhere((p) => p.id == productId);
+      final newQuantity = product.stockQuantity + change;
+      
+      // Update product
+      final updatedProduct = product.copyWith(stockQuantity: newQuantity);
+      updateProduct(updatedProduct);
+      
+      // Log history
+      final historyBox = HiveService.getStockHistoryBox();
+      final history = StockHistory(
+        id: _uuid.v4(),
+        productId: productId,
+        productName: product.name,
+        changeAmount: change,
+        newQuantity: newQuantity,
+        type: type,
+        reason: reason,
+        timestamp: DateTime.now(),
+      );
+      await historyBox.put(history.id, history);
+    } catch (e) {
+      // Handle error (e.g. product not found)
+      print('Error adjusting stock: $e');
+    }
   }
 }

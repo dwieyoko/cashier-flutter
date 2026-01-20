@@ -242,8 +242,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     // Simulate processing delay
     await Future.delayed(const Duration(seconds: 1));
     
-    // Create order
-    final order = ref.read(ordersProvider.notifier).createOrder(
+    // Create order (now async for stock deduction)
+    final order = await ref.read(ordersProvider.notifier).createOrder(
       paymentMethod: _selectedPaymentMethod,
       customerName: _customerNameController.text.isEmpty 
         ? null 

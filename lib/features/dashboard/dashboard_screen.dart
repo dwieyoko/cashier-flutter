@@ -10,6 +10,8 @@ import '../../providers/currency_provider.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/bottom_nav.dart';
 import '../reports/analytics_screen.dart';
+import '../../features/inventory/stock_history_screen.dart';
+import '../../data/models/order.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -153,6 +155,21 @@ class DashboardScreen extends ConsumerWidget {
                         ),
                         const SizedBox(width: 12), // Added SizedBox for spacing
                         _QuickActionButton(
+                          icon: Iconsax.box_time,
+                          label: 'Stock',
+                          color: Colors.teal,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const StockHistoryScreen(),
+                              ),
+                            );
+                          },
+                          delay: 300,
+                        ),
+                        const SizedBox(width: 12), // Added SizedBox for spacing
+                        _QuickActionButton(
                           icon: Iconsax.box,
                           label: 'Products',
                           color: AppColors.warning,
@@ -225,49 +242,52 @@ class DashboardScreen extends ConsumerWidget {
                     final order = recentOrders[index];
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-                      child: AppCard(
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryLight.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
+                      child: GestureDetector(
+                        onTap: () => _showOrderDetails(context, order, ref),
+                        child: AppCard(
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryLight.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Iconsax.receipt_2,
+                                  color: AppColors.primary,
+                                ),
                               ),
-                              child: Icon(
-                                Iconsax.receipt_2,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    AppFormatters.formatOrderId(order.id),
-                                    style: Theme.of(context).textTheme.titleSmall,
-                                  ),
-                                  Text(
-                                    '${order.totalItems} items • ${AppFormatters.formatTime(order.createdAt)}',
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: AppColors.textSecondary,
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      AppFormatters.formatOrderId(order.id),
+                                      style: Theme.of(context).textTheme.titleSmall,
                                     ),
-                                  ),
-                                ],
+                                    Text(
+                                      '${order.totalItems} items • ${AppFormatters.formatTime(order.createdAt)}',
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            Text(
-                              currency.format(order.total),
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.success,
+                              Text(
+                                currency.format(order.total),
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.success,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ).animate().fadeIn(duration: 300.ms, delay: (900 + index * 100).ms)
-                        .slideY(begin: 0.1),
+                            ],
+                          ),
+                        ).animate().fadeIn(duration: 300.ms, delay: (900 + index * 100).ms)
+                          .slideY(begin: 0.1),
+                      ),
                     );
                   },
                   childCount: recentOrders.length,
@@ -278,6 +298,141 @@ class DashboardScreen extends ConsumerWidget {
             const SliverToBoxAdapter(
               child: SizedBox(height: 100),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  void _showOrderDetails(BuildContext context, Order order, WidgetRef ref) {
+    final currency = ref.read(currencyFormatterProvider);
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Theme.of(context).brightness == Brightness.dark
+            ? AppColors.surfaceDark
+            : AppColors.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Order Details',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Iconsax.close_circle),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              AppFormatters.formatOrderId(order.id),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+            Text(
+              AppFormatters.formatDateTime(order.createdAt),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.textMuted,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ...order.items.map((item) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${item.productName} x${item.quantity}',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                  Text(
+                    currency.format(item.subtotal),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            )),
+            const Divider(),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Subtotal', style: Theme.of(context).textTheme.bodyMedium),
+                Text(
+                  currency.format(order.subtotal),
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Tax', style: Theme.of(context).textTheme.bodyMedium),
+                Text(
+                  currency.format(order.tax),
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Total',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  currency.format(order.total),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.success,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(Iconsax.card, color: AppColors.primary),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Payment: ${order.paymentMethod}',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
